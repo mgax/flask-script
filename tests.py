@@ -352,7 +352,6 @@ class TestManager(unittest.TestCase):
         assert "['pos1', 'pos2', '--bar']" in sys.stdout.getvalue()
 
     def test_run_bad_options(self):
-
         manager = Manager(self.app)
         manager.add_command("simple", CommandWithOptions())
         sys.argv = ["manage.py", "simple", "--foo=bar"]
@@ -366,12 +365,10 @@ class TestManager(unittest.TestCase):
             sys.stderr = sys_stderr_orig
 
     def test_init_with_flask_instance(self):
-
         manager = Manager(self.app)
         assert callable(manager.app)
 
     def test_init_with_callable(self):
-
         manager = Manager(lambda: app)
         assert callable(manager.app)
 
