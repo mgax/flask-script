@@ -393,3 +393,72 @@ class TestManager(unittest.TestCase):
         except SystemExit, e:
             assert e.code == 0
         assert 'OK' in sys.stdout.getvalue()
+
+
+class TestSubManager(unittest.TestCase):
+
+    TESTING = True
+
+    def setUp(self):
+
+        self.app = Flask(__name__)
+        self.app.config.from_object(self)
+
+    def test_add_submanager(self):
+
+        sub_manager = Manager(self.app)
+
+        manager = Manager(self.app)
+        manager.add_command("sub_manager", sub_manager)
+
+        assert isinstance(manager._commands['sub_manager'], Manager)
+
+    def test_run_submanager_command(self):
+
+        sub_manager = Manager(self.app)
+        sub_manager.add_command("simple", SimpleCommand())
+
+        manager = Manager(self.app)
+        manager.add_command("sub_manager", sub_manager)
+
+        sys.argv = ["manage.py", "sub_manager", "simple"]
+
+        try:
+            manager.run()
+        except SystemExit, e:
+            assert e.code == 0
+
+        assert 'OK' in sys.stdout.getvalue()
+
+    def test_manager_usage_with_submanager(self):
+
+        sub_manager = Manager(self.app, usage="Example sub-manager")
+
+        manager = Manager(self.app)
+        manager.add_command("sub_manager", sub_manager)
+
+        sys.argv = ["manage.py"]
+
+        try:
+            manager.run()
+        except SystemExit, e:
+            assert e.code == 1
+
+        assert 'sub_manager  Example sub-manager' in sys.stdout.getvalue()
+
+    def test_submanager_usage(self):
+
+        sub_manager = Manager(self.app, usage="Example sub-manager")
+        sub_manager.add_command("simple", SimpleCommand())
+
+        manager = Manager(self.app)
+        manager.add_command("sub_manager", sub_manager)
+
+        sys.argv = ["manage.py", "sub_manager"]
+
+        try:
+            manager.run()
+        except SystemExit, e:
+            assert e.code == 1
+
+        assert "simple     simple command" in sys.stdout.getvalue()

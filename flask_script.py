@@ -633,7 +633,12 @@ class Manager(object):
 
         for name, command in sorted(self._commands.iteritems()):
             usage = name
-            description = command.description or ''
+
+            if isinstance(command, Manager):
+                description = command.usage or ''
+            else:
+                description = command.description or ''
+
             usage = format % (name, description)
             rv.append(usage)
 
@@ -656,27 +661,32 @@ class Manager(object):
         except KeyError:
             raise InvalidCommand, "Command %s not found" % name
 
-        help_args = ('-h', '--help')
-
-        # remove -h from args if present, and add to remaining args
-        app_args = [a for a in args if a not in help_args]
-
-        app_parser = self.create_parser(prog)
-        app_namespace, remaining_args = app_parser.parse_known_args(app_args)
-        app = self.create_app(**app_namespace.__dict__)
-
-        for arg in help_args:
-            if arg in args:
-                remaining_args.append(arg)
-
-        command_parser = command.create_parser(prog + " " + name)
-        if getattr(command, 'capture_all_args', False):
-            command_namespace, unparsed_args = \
-                command_parser.parse_known_args(remaining_args)
-            positional_args = [unparsed_args]
+        if isinstance(command, Manager):
+            # Run sub-manager, stripping first argument
+            sys.argv = sys.argv[1:]
+            command.run()
         else:
-            command_namespace = command_parser.parse_args(remaining_args)
-            positional_args = []
+            help_args = ('-h', '--help')
+
+            # remove -h/--help from args if present, and add to remaining args
+            app_args = [a for a in args if a not in help_args]
+
+            app_parser = self.create_parser(prog)
+            app_namespace, remaining_args = app_parser.parse_known_args(app_args)
+            app = self.create_app(**app_namespace.__dict__)
+
+            for arg in help_args:
+                if arg in args:
+                    remaining_args.append(arg)
+
+            command_parser = command.create_parser(prog + " " + name)
+            if getattr(command, 'capture_all_args', False):
+                command_namespace, unparsed_args = \
+                    command_parser.parse_known_args(remaining_args)
+                positional_args = [unparsed_args]
+            else:
+                command_namespace = command_parser.parse_args(remaining_args)
+                positional_args = []
 
         return command.handle(app, *positional_args, **command_namespace.__dict__)
 
@@ -704,7 +714,7 @@ class Manager(object):
                 command = default_command
 
             if command is None:
-                raise InvalidCommand, "Please provide a command"
+                raise InvalidCommand, "Please provide a command:"
 
             result = self.handle(sys.argv[0], command, sys.argv[2:])
 
