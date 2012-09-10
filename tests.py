@@ -406,16 +406,18 @@ class TestSubManager(unittest.TestCase):
 
     def test_add_submanager(self):
 
-        sub_manager = Manager(self.app)
+        sub_manager = Manager()
 
         manager = Manager(self.app)
         manager.add_command("sub_manager", sub_manager)
 
         assert isinstance(manager._commands['sub_manager'], Manager)
+        assert sub_manager.parent == manager
+        assert sub_manager.get_options() == manager.get_options()
 
     def test_run_submanager_command(self):
 
-        sub_manager = Manager(self.app)
+        sub_manager = Manager()
         sub_manager.add_command("simple", SimpleCommand())
 
         manager = Manager(self.app)
@@ -432,7 +434,7 @@ class TestSubManager(unittest.TestCase):
 
     def test_manager_usage_with_submanager(self):
 
-        sub_manager = Manager(self.app, usage="Example sub-manager")
+        sub_manager = Manager(usage="Example sub-manager")
 
         manager = Manager(self.app)
         manager.add_command("sub_manager", sub_manager)
@@ -448,7 +450,7 @@ class TestSubManager(unittest.TestCase):
 
     def test_submanager_usage(self):
 
-        sub_manager = Manager(self.app, usage="Example sub-manager")
+        sub_manager = Manager(usage="Example sub-manager")
         sub_manager.add_command("simple", SimpleCommand())
 
         manager = Manager(self.app)
@@ -461,4 +463,14 @@ class TestSubManager(unittest.TestCase):
         except SystemExit, e:
             assert e.code == 1
 
-        assert "simple     simple command" in sys.stdout.getvalue()
+        assert "simple  simple command" in sys.stdout.getvalue()
+
+    def test_submanager_no_default_commands(self):
+
+        sub_manager = Manager()
+
+        manager = Manager()
+        manager.add_command("sub_manager", sub_manager)
+
+        assert 'runserver' not in sub_manager._commands
+        assert 'shell' not in sub_manager._commands

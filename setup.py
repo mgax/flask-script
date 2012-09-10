@@ -24,7 +24,7 @@ except ImportError:
 
 setup(
     name='Flask-Script',
-    version='0.4.0',
+    version='0.5.0',
     url='http://github.com/techniq/flask-script',
     license='BSD',
     author='Dan Jacob',
